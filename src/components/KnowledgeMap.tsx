@@ -17,12 +17,13 @@ const KnowledgeMap: React.FC<KnowledgeMapProps> = ({ data, onSelectTopic, select
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
   const [transform, setTransform] = useState<d3.ZoomTransform>(d3.zoomIdentity);
   const simulationRef = useRef<d3.Simulation<d3.SimulationNodeDatum, undefined> | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // Update dimensions on resize
   useEffect(() => {
     const updateDimensions = () => {
-      if (svgRef.current && svgRef.current.parentElement) {
-        const { width, height } = svgRef.current.parentElement.getBoundingClientRect();
+      if (containerRef.current) {
+        const { width, height } = containerRef.current.getBoundingClientRect();
         setDimensions({ width, height });
       }
     };
@@ -45,9 +46,15 @@ const KnowledgeMap: React.FC<KnowledgeMapProps> = ({ data, onSelectTopic, select
     // Clear previous elements
     container.selectAll('*').remove();
 
-    // Create the simulation
+    // Create the simulation with stronger forces for larger visualization
     const simulation = createForceSimulation(data);
     simulationRef.current = simulation;
+    
+    // Strengthen forces for larger layout
+    simulation
+      .force('charge', d3.forceManyBody().strength(-800))
+      .force('link', d3.forceLink().id((d: any) => d.id).distance((link: any) => 250 - (link.strength || 0.5) * 50))
+      .force('collision', d3.forceCollide().radius((d: any) => Math.sqrt((d as any).size || 10) * 3.5));
 
     // Create links
     const links = container.append('g')
@@ -75,23 +82,23 @@ const KnowledgeMap: React.FC<KnowledgeMapProps> = ({ data, onSelectTopic, select
         onSelectTopic(d as TopicNode);
       });
 
-    // Add island shape paths
+    // Add island shape paths with larger sizes
     nodes.append('path')
-      .attr('d', d => generateIslandPath(d.size))
+      .attr('d', d => generateIslandPath(d.size * 1.5)) // Increase size by 50%
       .attr('fill', d => d.color || '#4CAF50')
       .attr('stroke', '#0D47A1')
       .attr('stroke-width', 1.5)
       .attr('class', d => `island-shape ${d.id === selectedTopic?.id ? 'glow-effect' : ''}`)
       .attr('filter', d => d.id === selectedTopic?.id ? 'url(#glow)' : '');
 
-    // Add island labels
+    // Add island labels with larger font
     nodes.append('text')
       .attr('text-anchor', 'middle')
       .attr('dy', '.3em')
       .attr('fill', 'white')
       .attr('font-weight', 'bold')
       .attr('pointer-events', 'none')
-      .attr('font-size', d => Math.max(10, Math.sqrt(d.size) * 0.8))
+      .attr('font-size', d => Math.max(12, Math.sqrt(d.size) * 1.2)) // Increase font size
       .text(d => d.name);
 
     // Define arrow marker for links
@@ -146,7 +153,7 @@ const KnowledgeMap: React.FC<KnowledgeMapProps> = ({ data, onSelectTopic, select
 
     svg.call(zoom);
 
-    // Center the visualization initially
+    // Center the visualization initially with a wider view
     if (data.nodes.length > 0) {
       setTimeout(() => {
         const nodePositions = data.nodes.map(node => ({ 
@@ -157,7 +164,8 @@ const KnowledgeMap: React.FC<KnowledgeMapProps> = ({ data, onSelectTopic, select
         const fitTransform = calculateZoomToFit(
           nodePositions,
           dimensions.width,
-          dimensions.height
+          dimensions.height,
+          60 // Increased padding for better visibility
         );
         
         svg.transition()
@@ -166,14 +174,14 @@ const KnowledgeMap: React.FC<KnowledgeMapProps> = ({ data, onSelectTopic, select
             zoom.transform,
             d3.zoomIdentity
               .translate(fitTransform.x, fitTransform.y)
-              .scale(fitTransform.scale * 0.8)
+              .scale(fitTransform.scale * 0.9) // Apply slightly larger scale
           );
       }, 1000); // Give simulation time to initially position nodes
     }
 
     // Stop simulation when component unmounts
     return () => {
-      simulation.stop();
+      if (simulation) simulation.stop();
     };
   }, [data, dimensions, selectedTopic, onSelectTopic]);
 
@@ -220,12 +228,12 @@ const KnowledgeMap: React.FC<KnowledgeMapProps> = ({ data, onSelectTopic, select
         zoom.transform,
         d3.zoomIdentity
           .translate(fitTransform.x, fitTransform.y)
-          .scale(fitTransform.scale * 0.8)
+          .scale(fitTransform.scale * 0.9)
       );
   };
 
   return (
-    <div className="relative w-full h-full">
+    <div ref={containerRef} className="relative w-full h-full flex items-center justify-center">
       <svg 
         ref={svgRef} 
         className="w-full h-full" 
@@ -233,7 +241,7 @@ const KnowledgeMap: React.FC<KnowledgeMapProps> = ({ data, onSelectTopic, select
       >
         <g className="container"></g>
       </svg>
-      <div className="map-controls flex flex-col space-y-2">
+      <div className="absolute top-4 right-4 flex flex-col space-y-2 z-10">
         <Button 
           variant="secondary" 
           size="icon"

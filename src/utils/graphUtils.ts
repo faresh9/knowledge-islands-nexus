@@ -74,19 +74,30 @@ export const createForceSimulation = (data: KnowledgeGraphData) => {
   
   // Prepare links with actual node references
   const links = data.links.map(link => {
-    let sourceNode: d3.SimulationNodeDatum;
-    let targetNode: d3.SimulationNodeDatum;
+    let sourceNode: d3.SimulationNodeDatum | null = null;
+    let targetNode: d3.SimulationNodeDatum | null = null;
     
     if (typeof link.source === 'object' && link.source !== null) {
       sourceNode = nodeMap.get(link.source.id) || (link.source as unknown as d3.SimulationNodeDatum);
-    } else {
-      sourceNode = nodeMap.get(link.source as string) || { id: link.source } as d3.SimulationNodeDatum;
+    } else if (typeof link.source === 'string') {
+      sourceNode = nodeMap.get(link.source) || { id: link.source } as d3.SimulationNodeDatum;
     }
     
     if (typeof link.target === 'object' && link.target !== null) {
       targetNode = nodeMap.get(link.target.id) || (link.target as unknown as d3.SimulationNodeDatum);
-    } else {
-      targetNode = nodeMap.get(link.target as string) || { id: link.target } as d3.SimulationNodeDatum;
+    } else if (typeof link.target === 'string') {
+      targetNode = nodeMap.get(link.target) || { id: link.target } as d3.SimulationNodeDatum;
+    }
+    
+    // Ensure both source and target are defined
+    if (!sourceNode || !targetNode) {
+      console.warn('Invalid link found:', link);
+      // Return a dummy link that won't cause errors
+      return {
+        ...link,
+        source: sourceNode || nodes[0] || { id: 'dummy-source' },
+        target: targetNode || nodes[0] || { id: 'dummy-target' },
+      } as unknown as d3.SimulationLinkDatum<d3.SimulationNodeDatum>;
     }
     
     return {

@@ -2,144 +2,129 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
+ 
 @layer base {
   :root {
-    --background: 210 50% 10%;
-    --foreground: 210 40% 98%;
-
-    --card: 210 40% 15%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 210 40% 15%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 210 80% 60%;
+    --background: 0 0% 100%;
+    --foreground: 222.2 47.4% 11.2%;
+ 
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+ 
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 47.4% 11.2%;
+ 
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 47.4% 11.2%;
+ 
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+ 
+    --primary: 222.2 47.4% 11.2%;
     --primary-foreground: 210 40% 98%;
-
-    --secondary: 160 70% 40%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 210 30% 20%;
-    --muted-foreground: 210 20% 70%;
-
-    --accent: 35 90% 60%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 80% 60%;
+ 
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+ 
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+ 
+    --destructive: 0 100% 50%;
     --destructive-foreground: 210 40% 98%;
-
-    --border: 210 30% 20%;
-    --input: 210 30% 20%;
-    --ring: 210 80% 60%;
-
+ 
+    --ring: 215 20.2% 65.1%;
+ 
     --radius: 0.5rem;
-    
-    --sidebar-background: 210 40% 15%;
-    --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 210 80% 60%;
-    --sidebar-primary-foreground: 210 40% 98%;
-    --sidebar-accent: 210 30% 20%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 210 30% 25%;
-    --sidebar-ring: 210 80% 60%;
+  }
+ 
+  .dark {
+    --background: 224 71% 4%;
+    --foreground: 213 31% 91%;
+ 
+    --muted: 223 47% 11%;
+    --muted-foreground: 215.4 16.3% 56.9%;
+ 
+    --popover: 224 71% 4%;
+    --popover-foreground: 215 20.2% 65.1%;
+ 
+    --card: 224 71% 4%;
+    --card-foreground: 213 31% 91%;
+ 
+    --border: 216 34% 17%;
+    --input: 216 34% 17%;
+ 
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 1.2%;
+ 
+    --secondary: 222.2 47.4% 11.2%;
+    --secondary-foreground: 210 40% 98%;
+ 
+    --accent: 216 34% 17%;
+    --accent-foreground: 210 40% 98%;
+ 
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 210 40% 98%;
+ 
+    --ring: 216 34% 17%;
+ 
+    --radius: 0.5rem;
   }
 }
-
+ 
 @layer base {
   * {
     @apply border-border;
   }
-
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
 
+/* Knowledge Map styles */
 .knowledge-map {
-  width: 100%;
-  height: 100%;
-  position: relative;
-  overflow: hidden;
-  background: linear-gradient(180deg, hsl(210, 70%, 10%) 0%, hsl(220, 80%, 5%) 100%);
-}
-
-.island {
-  cursor: pointer;
-  transition: filter 0.3s ease;
-}
-
-.island:hover {
-  filter: brightness(1.3);
-}
-
-.link {
-  stroke-opacity: 0.6;
-  transition: stroke-opacity 0.3s ease, stroke-width 0.3s ease;
-}
-
-.link:hover {
-  stroke-opacity: 1;
-  stroke-width: 2px;
+  height: calc(100vh - 64px);
 }
 
 .map-controls {
   position: absolute;
-  bottom: 20px;
-  right: 20px;
-  z-index: 100;
+  top: 16px;
+  right: 16px;
+  z-index: 10;
 }
 
-.map-sidebar-container {
-  position: fixed;
-  height: 100vh;
-  transition: transform 0.3s ease;
+/* Island styles */
+.island:hover {
+  cursor: pointer;
 }
 
-.topic-detail {
-  backdrop-filter: blur(8px);
-  background-color: rgba(15, 23, 42, 0.75);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+.island-shape {
+  transition: filter 0.3s ease;
 }
 
 .glow-effect {
-  filter: drop-shadow(0 0 8px rgba(56, 182, 255, 0.8));
+  filter: url(#glow);
 }
 
-.knowledge-map svg {
-  width: 100%;
+/* Custom animation for topic details */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease forwards;
+}
+
+/* Make sure the app takes up the full viewport */
+html, body, #root {
   height: 100%;
-}
-
-.pulse {
-  animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-  0% {
-    filter: drop-shadow(0 0 2px rgba(56, 182, 255, 0.8));
-  }
-  50% {
-    filter: drop-shadow(0 0 8px rgba(56, 182, 255, 0.8));
-  }
-  100% {
-    filter: drop-shadow(0 0 2px rgba(56, 182, 255, 0.8));
-  }
-}
-
-.animate-float {
-  animation: float 6s ease-in-out infinite;
-}
-
-@keyframes float {
-  0% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(-10px);
-  }
-  100% {
-    transform: translateY(0px);
-  }
+  margin: 0;
+  overflow: hidden;
 }
