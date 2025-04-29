@@ -26,10 +26,20 @@ export const getConnectedNodes = (data: KnowledgeGraphData, nodeId: string): Top
   const connectedNodeIds = new Set<string>();
   
   connectedLinks.forEach(link => {
-    if (link.source === nodeId) {
-      connectedNodeIds.add(link.target);
-    } else {
-      connectedNodeIds.add(link.source);
+    if (typeof link.source === 'object') {
+      if (link.source.id === nodeId) {
+        connectedNodeIds.add(typeof link.target === 'object' ? link.target.id : link.target);
+      }
+    } else if (link.source === nodeId) {
+      connectedNodeIds.add(typeof link.target === 'object' ? link.target.id : link.target);
+    }
+    
+    if (typeof link.target === 'object') {
+      if (link.target.id === nodeId) {
+        connectedNodeIds.add(typeof link.source === 'object' ? link.source.id : link.source);
+      }
+    } else if (link.target === nodeId) {
+      connectedNodeIds.add(typeof link.source === 'object' ? link.source.id : link.source);
     }
   });
   
@@ -38,17 +48,25 @@ export const getConnectedNodes = (data: KnowledgeGraphData, nodeId: string): Top
 
 // Generate a force simulation for the graph
 export const createForceSimulation = (data: KnowledgeGraphData) => {
-  // Create a map for faster node lookups
-  const nodeMap = new Map(data.nodes.map(node => [node.id, node]));
+  // Create a copy of the nodes array to avoid mutating the original data
+  const nodes = [...data.nodes];
   
-  // Prepare links with actual node references
-  const links = data.links.map(link => ({
-    ...link,
-    source: nodeMap.get(link.source) || link.source,
-    target: nodeMap.get(link.target) || link.target
-  }));
+  // Create a map for faster node lookups
+  const nodeMap = new Map(nodes.map(node => [node.id, node]));
+  
+  // Prepare links with actual node references - properly typed for D3
+  const links = data.links.map(link => {
+    const source = nodeMap.get(typeof link.source === 'string' ? link.source : link.source.id) || link.source;
+    const target = nodeMap.get(typeof link.target === 'string' ? link.target : link.target.id) || link.target;
+    
+    return {
+      ...link,
+      source,
+      target,
+    };
+  });
 
-  return d3.forceSimulation(data.nodes as d3.SimulationNodeDatum[])
+  return d3.forceSimulation(nodes)
     .force('link', d3.forceLink(links).id((d: any) => d.id).distance(link => 200 - (link as any).strength * 50))
     .force('charge', d3.forceManyBody().strength(-500))
     .force('center', d3.forceCenter(0, 0))
