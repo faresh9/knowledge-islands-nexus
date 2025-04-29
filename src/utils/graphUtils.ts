@@ -26,20 +26,38 @@ export const getConnectedNodes = (data: KnowledgeGraphData, nodeId: string): Top
   const connectedNodeIds = new Set<string>();
   
   connectedLinks.forEach(link => {
-    if (typeof link.source === 'object') {
+    // Handle source which could be string or object with id
+    if (typeof link.source === 'object' && link.source !== null) {
       if (link.source.id === nodeId) {
-        connectedNodeIds.add(typeof link.target === 'object' ? link.target.id : link.target);
+        if (typeof link.target === 'object' && link.target !== null) {
+          connectedNodeIds.add(link.target.id);
+        } else if (typeof link.target === 'string') {
+          connectedNodeIds.add(link.target);
+        }
       }
     } else if (link.source === nodeId) {
-      connectedNodeIds.add(typeof link.target === 'object' ? link.target.id : link.target);
+      if (typeof link.target === 'object' && link.target !== null) {
+        connectedNodeIds.add(link.target.id);
+      } else if (typeof link.target === 'string') {
+        connectedNodeIds.add(link.target);
+      }
     }
     
-    if (typeof link.target === 'object') {
+    // Handle target which could be string or object with id
+    if (typeof link.target === 'object' && link.target !== null) {
       if (link.target.id === nodeId) {
-        connectedNodeIds.add(typeof link.source === 'object' ? link.source.id : link.source);
+        if (typeof link.source === 'object' && link.source !== null) {
+          connectedNodeIds.add(link.source.id);
+        } else if (typeof link.source === 'string') {
+          connectedNodeIds.add(link.source);
+        }
       }
     } else if (link.target === nodeId) {
-      connectedNodeIds.add(typeof link.source === 'object' ? link.source.id : link.source);
+      if (typeof link.source === 'object' && link.source !== null) {
+        connectedNodeIds.add(link.source.id);
+      } else if (typeof link.source === 'string') {
+        connectedNodeIds.add(link.source);
+      }
     }
   });
   
@@ -49,25 +67,37 @@ export const getConnectedNodes = (data: KnowledgeGraphData, nodeId: string): Top
 // Generate a force simulation for the graph
 export const createForceSimulation = (data: KnowledgeGraphData) => {
   // Create a copy of the nodes array to avoid mutating the original data
-  const nodes = [...data.nodes];
+  const nodes = [...data.nodes] as d3.SimulationNodeDatum[];
   
   // Create a map for faster node lookups
-  const nodeMap = new Map(nodes.map(node => [node.id, node]));
+  const nodeMap = new Map(data.nodes.map(node => [node.id, node as unknown as d3.SimulationNodeDatum]));
   
-  // Prepare links with actual node references - properly typed for D3
+  // Prepare links with actual node references
   const links = data.links.map(link => {
-    const source = nodeMap.get(typeof link.source === 'string' ? link.source : link.source.id) || link.source;
-    const target = nodeMap.get(typeof link.target === 'string' ? link.target : link.target.id) || link.target;
+    let sourceNode: d3.SimulationNodeDatum;
+    let targetNode: d3.SimulationNodeDatum;
+    
+    if (typeof link.source === 'object' && link.source !== null) {
+      sourceNode = nodeMap.get(link.source.id) || (link.source as unknown as d3.SimulationNodeDatum);
+    } else {
+      sourceNode = nodeMap.get(link.source as string) || { id: link.source } as d3.SimulationNodeDatum;
+    }
+    
+    if (typeof link.target === 'object' && link.target !== null) {
+      targetNode = nodeMap.get(link.target.id) || (link.target as unknown as d3.SimulationNodeDatum);
+    } else {
+      targetNode = nodeMap.get(link.target as string) || { id: link.target } as d3.SimulationNodeDatum;
+    }
     
     return {
       ...link,
-      source,
-      target,
-    };
+      source: sourceNode,
+      target: targetNode,
+    } as unknown as d3.SimulationLinkDatum<d3.SimulationNodeDatum>;
   });
 
   return d3.forceSimulation(nodes)
-    .force('link', d3.forceLink(links).id((d: any) => d.id).distance(link => 200 - (link as any).strength * 50))
+    .force('link', d3.forceLink(links).id((d: any) => d.id).distance((link: any) => 200 - link.strength * 50))
     .force('charge', d3.forceManyBody().strength(-500))
     .force('center', d3.forceCenter(0, 0))
     .force('collision', d3.forceCollide().radius((d: any) => Math.sqrt(d.size) * 2.5));
