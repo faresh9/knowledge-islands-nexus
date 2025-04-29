@@ -94,10 +94,14 @@
 }
 
 /* Island styles */
-.island:hover {
+.island {
   cursor: pointer;
+  transition: transform 0.3s ease;
+}
+
+.island:hover {
+  transform: scale(1.05);
   filter: brightness(1.2);
-  transition: filter 0.3s ease;
 }
 
 .island-shape {
@@ -115,11 +119,12 @@
 /* Link styles */
 .link {
   transition: stroke-width 0.3s ease, opacity 0.3s ease;
+  cursor: pointer;
 }
 
 .link:hover {
-  stroke-width: 4px;
-  opacity: 0.9;
+  stroke-width: 7px !important;
+  opacity: 1 !important;
 }
 
 /* Custom animation for topic details */
@@ -162,4 +167,13 @@ html, body, #root {
   height: 100%;
   margin: 0;
   overflow: hidden;
+}
+
+/* Link description tooltip */
+.link-description {
+  background-color: rgba(0, 0, 0, 0.8);
+  padding: 4px 8px;
+  border-radius: 4px;
+  pointer-events: none;
+  font-size: 12px;
 }

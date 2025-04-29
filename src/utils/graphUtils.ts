@@ -17,7 +17,12 @@ export const getNodeById = (data: KnowledgeGraphData, id: string): TopicNode | u
 
 // Get all links connected to a node
 export const getConnectedLinks = (data: KnowledgeGraphData, nodeId: string): TopicLink[] => {
-  return data.links.filter(link => link.source === nodeId || link.target === nodeId);
+  return data.links.filter(link => 
+    (typeof link.source === 'object' && link.source !== null && link.source.id === nodeId) ||
+    (typeof link.source === 'string' && link.source === nodeId) ||
+    (typeof link.target === 'object' && link.target !== null && link.target.id === nodeId) ||
+    (typeof link.target === 'string' && link.target === nodeId)
+  );
 };
 
 // Get all nodes connected to a node
@@ -34,12 +39,18 @@ export const getConnectedNodes = (data: KnowledgeGraphData, nodeId: string): Top
         } else if (typeof link.target === 'string') {
           connectedNodeIds.add(link.target);
         }
+      } else {
+        connectedNodeIds.add(link.source.id);
       }
-    } else if (typeof link.source === 'string' && link.source === nodeId) {
-      if (typeof link.target === 'object' && link.target !== null) {
-        connectedNodeIds.add(link.target.id);
-      } else if (typeof link.target === 'string') {
-        connectedNodeIds.add(link.target);
+    } else if (typeof link.source === 'string') {
+      if (link.source === nodeId) {
+        if (typeof link.target === 'object' && link.target !== null) {
+          connectedNodeIds.add(link.target.id);
+        } else if (typeof link.target === 'string') {
+          connectedNodeIds.add(link.target);
+        }
+      } else {
+        connectedNodeIds.add(link.source);
       }
     }
     
@@ -51,12 +62,18 @@ export const getConnectedNodes = (data: KnowledgeGraphData, nodeId: string): Top
         } else if (typeof link.source === 'string') {
           connectedNodeIds.add(link.source);
         }
+      } else {
+        connectedNodeIds.add(link.target.id);
       }
-    } else if (typeof link.target === 'string' && link.target === nodeId) {
-      if (typeof link.source === 'object' && link.source !== null) {
-        connectedNodeIds.add(link.source.id);
-      } else if (typeof link.source === 'string') {
-        connectedNodeIds.add(link.source);
+    } else if (typeof link.target === 'string') {
+      if (link.target === nodeId) {
+        if (typeof link.source === 'object' && link.source !== null) {
+          connectedNodeIds.add(link.source.id);
+        } else if (typeof link.source === 'string') {
+          connectedNodeIds.add(link.source);
+        }
+      } else {
+        connectedNodeIds.add(link.target);
       }
     }
   });
@@ -107,16 +124,17 @@ export const createForceSimulation = (data: KnowledgeGraphData) => {
     } as unknown as d3.SimulationLinkDatum<d3.SimulationNodeDatum>;
   });
 
+  // Strengthen the forces to create more space between nodes
   return d3.forceSimulation(nodes)
-    .force('link', d3.forceLink(links).id((d: any) => d.id).distance((link: any) => 200 - link.strength * 50))
-    .force('charge', d3.forceManyBody().strength(-900))
+    .force('link', d3.forceLink(links).id((d: any) => d.id).distance((link: any) => 250 - (link.strength || 0.5) * 50))
+    .force('charge', d3.forceManyBody().strength(-1200)) // Increased repulsion
     .force('center', d3.forceCenter(0, 0))
-    .force('collision', d3.forceCollide().radius((d: any) => Math.sqrt((d as any).size || 10) * 3.5));
+    .force('collision', d3.forceCollide().radius((d: any) => Math.sqrt((d as any).size || 10) * 4.5)); // Increased collision radius
 };
 
 // Generate island path for a node
 export const generateIslandPath = (size: number): string => {
-  const radius = Math.sqrt(size) * 2.5; // Increased size multiplier
+  const radius = Math.sqrt(size) * 4; // Significantly larger size multiplier
   
   // Create a random island shape using SVG path
   const points = 12; // Number of points around the circle
@@ -172,7 +190,7 @@ export const calculateZoomToFit = (
   const centerY = (minY + maxY) / 2;
   
   return {
-    scale,
+    scale: scale * 0.85, // Slightly zoomed out for better context
     x: width / 2 - centerX * scale,
     y: height / 2 - centerY * scale
   };

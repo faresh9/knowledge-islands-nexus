@@ -52,9 +52,9 @@ const KnowledgeMap: React.FC<KnowledgeMapProps> = ({ data, onSelectTopic, select
     
     // Strengthen forces for larger layout
     simulation
-      .force('charge', d3.forceManyBody().strength(-900))
-      .force('link', d3.forceLink().id((d: any) => d.id).distance((link: any) => 250 - (link.strength || 0.5) * 50))
-      .force('collision', d3.forceCollide().radius((d: any) => Math.sqrt((d as any).size || 10) * 3.5));
+      .force('charge', d3.forceManyBody().strength(-1200)) // Stronger repulsion
+      .force('link', d3.forceLink().id((d: any) => d.id).distance((link: any) => 300 - (link.strength || 0.5) * 70)) // Increased distance
+      .force('collision', d3.forceCollide().radius((d: any) => Math.sqrt((d as any).size || 10) * 5)); // Larger collision radius
 
     // Define marker for arrows
     const defs = svg.append('defs');
@@ -79,10 +79,10 @@ const KnowledgeMap: React.FC<KnowledgeMapProps> = ({ data, onSelectTopic, select
     defs.append('marker')
       .attr('id', 'arrow')
       .attr('viewBox', '0 -5 10 10')
-      .attr('refX', 20) // Move the arrow away from the node
+      .attr('refX', 30) // Move the arrow away from the node
       .attr('refY', 0)
-      .attr('markerWidth', 8)
-      .attr('markerHeight', 8)
+      .attr('markerWidth', 12)
+      .attr('markerHeight', 12)
       .attr('orient', 'auto')
       .append('path')
       .attr('d', 'M0,-5L10,0L0,5')
@@ -99,10 +99,11 @@ const KnowledgeMap: React.FC<KnowledgeMapProps> = ({ data, onSelectTopic, select
       .append('path')
       .attr('class', 'link')
       .attr('stroke', d => d.strength > 0.6 ? '#6C8EBF' : '#38B6FF')
-      .attr('stroke-width', d => d.strength * 3)
+      .attr('stroke-width', d => d.strength * 5) // Increased line thickness
       .attr('fill', 'none')
-      .attr('opacity', 0.7)
-      .attr('marker-end', 'url(#arrow)');
+      .attr('opacity', 0.9) // Increased opacity for better visibility
+      .attr('marker-end', 'url(#arrow)')
+      .attr('stroke-dasharray', d => d.strength < 0.5 ? '5,5' : 'none'); // Add dashed lines for weak connections
 
     // Create nodes group
     const nodesGroup = container.append('g')
@@ -122,10 +123,10 @@ const KnowledgeMap: React.FC<KnowledgeMapProps> = ({ data, onSelectTopic, select
 
     // Add island shape paths with larger sizes
     nodes.append('path')
-      .attr('d', d => generateIslandPath(d.size * 2)) // Even larger size
+      .attr('d', d => generateIslandPath(d.size * 3)) // Much larger size
       .attr('fill', d => d.color || '#4CAF50')
       .attr('stroke', '#0D47A1')
-      .attr('stroke-width', 1.5)
+      .attr('stroke-width', 2)
       .attr('class', d => `island-shape ${d.id === selectedTopic?.id ? 'glow-effect' : ''}`)
       .attr('filter', d => d.id === selectedTopic?.id ? 'url(#glow)' : '');
 
@@ -136,15 +137,35 @@ const KnowledgeMap: React.FC<KnowledgeMapProps> = ({ data, onSelectTopic, select
       .attr('fill', 'white')
       .attr('font-weight', 'bold')
       .attr('pointer-events', 'none')
-      .attr('font-size', d => Math.max(14, Math.sqrt(d.size) * 1.5)) // Larger font size
+      .attr('font-size', d => Math.max(16, Math.sqrt(d.size) * 2)) // Much larger font size
       .text(d => d.name);
+
+    // Add small link description texts on hover
+    links.on('mouseover', function(event, d) {
+      if (d.description) {
+        const [x, y] = d3.pointer(event, container.node());
+        
+        container.append('text')
+          .attr('class', 'link-description')
+          .attr('x', x)
+          .attr('y', y - 10)
+          .attr('text-anchor', 'middle')
+          .attr('fill', 'white')
+          .attr('font-size', '12px')
+          .attr('pointer-events', 'none')
+          .text(d.description);
+      }
+    })
+    .on('mouseout', function() {
+      container.selectAll('.link-description').remove();
+    });
 
     // Update the simulation on tick
     simulation.on('tick', () => {
       links.attr('d', (d: any) => {
         const dx = d.target.x - d.source.x;
         const dy = d.target.y - d.source.y;
-        const dr = Math.sqrt(dx * dx + dy * dy) * 2; // Curve factor
+        const dr = Math.sqrt(dx * dx + dy * dy) * 1.5; // Curve factor
         return `M${d.source.x},${d.source.y} A${dr},${dr} 0 0,1 ${d.target.x},${d.target.y}`;
       });
 
@@ -173,7 +194,7 @@ const KnowledgeMap: React.FC<KnowledgeMapProps> = ({ data, onSelectTopic, select
           nodePositions,
           dimensions.width,
           dimensions.height,
-          80 // Increased padding for better visibility
+          120 // Increased padding for better visibility
         );
         
         svg.transition()
@@ -182,9 +203,9 @@ const KnowledgeMap: React.FC<KnowledgeMapProps> = ({ data, onSelectTopic, select
             zoom.transform,
             d3.zoomIdentity
               .translate(fitTransform.x, fitTransform.y)
-              .scale(fitTransform.scale * 0.85) // Apply slightly larger initial zoom
+              .scale(fitTransform.scale * 0.7) // Apply larger initial zoom
           );
-      }, 1000); // Give simulation time to initially position nodes
+      }, 1500); // Give simulation more time to initially position nodes
     }
 
     // Stop simulation when component unmounts
@@ -236,7 +257,7 @@ const KnowledgeMap: React.FC<KnowledgeMapProps> = ({ data, onSelectTopic, select
         zoom.transform,
         d3.zoomIdentity
           .translate(fitTransform.x, fitTransform.y)
-          .scale(fitTransform.scale * 0.85)
+          .scale(fitTransform.scale * 0.7)
       );
   }, [data.nodes, dimensions]);
 

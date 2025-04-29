@@ -26,7 +26,7 @@ const Index = () => {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-background">
+    <div className="flex flex-col h-screen w-full bg-background overflow-hidden">
       <Header toggleSidebar={toggleSidebar} />
       
       <div className="flex flex-1 pt-16 h-[calc(100vh-64px)] overflow-hidden">
@@ -39,7 +39,7 @@ const Index = () => {
           onToggle={toggleSidebar}
         />
         
-        <div className="flex-1 relative knowledge-map h-full">
+        <div className="flex-1 relative knowledge-map w-full h-full overflow-hidden">
           <KnowledgeMap 
             data={sampleGraphData} 
             onSelectTopic={setSelectedTopic} 
