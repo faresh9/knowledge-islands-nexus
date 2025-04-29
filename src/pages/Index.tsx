@@ -29,7 +29,7 @@ const Index = () => {
     <div className="flex flex-col h-screen bg-background">
       <Header toggleSidebar={toggleSidebar} />
       
-      <div className="flex flex-1 pt-16 h-[calc(100vh-64px)]">
+      <div className="flex flex-1 pt-16 h-[calc(100vh-64px)] overflow-hidden">
         <MapSidebar 
           data={sampleGraphData} 
           onSelectTopic={setSelectedTopic} 

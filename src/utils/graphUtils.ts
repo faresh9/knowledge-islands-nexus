@@ -35,7 +35,7 @@ export const getConnectedNodes = (data: KnowledgeGraphData, nodeId: string): Top
           connectedNodeIds.add(link.target);
         }
       }
-    } else if (link.source === nodeId) {
+    } else if (typeof link.source === 'string' && link.source === nodeId) {
       if (typeof link.target === 'object' && link.target !== null) {
         connectedNodeIds.add(link.target.id);
       } else if (typeof link.target === 'string') {
@@ -52,7 +52,7 @@ export const getConnectedNodes = (data: KnowledgeGraphData, nodeId: string): Top
           connectedNodeIds.add(link.source);
         }
       }
-    } else if (link.target === nodeId) {
+    } else if (typeof link.target === 'string' && link.target === nodeId) {
       if (typeof link.source === 'object' && link.source !== null) {
         connectedNodeIds.add(link.source.id);
       } else if (typeof link.source === 'string') {
@@ -109,14 +109,14 @@ export const createForceSimulation = (data: KnowledgeGraphData) => {
 
   return d3.forceSimulation(nodes)
     .force('link', d3.forceLink(links).id((d: any) => d.id).distance((link: any) => 200 - link.strength * 50))
-    .force('charge', d3.forceManyBody().strength(-500))
+    .force('charge', d3.forceManyBody().strength(-900))
     .force('center', d3.forceCenter(0, 0))
-    .force('collision', d3.forceCollide().radius((d: any) => Math.sqrt(d.size) * 2.5));
+    .force('collision', d3.forceCollide().radius((d: any) => Math.sqrt((d as any).size || 10) * 3.5));
 };
 
 // Generate island path for a node
 export const generateIslandPath = (size: number): string => {
-  const radius = Math.sqrt(size) * 1.5;
+  const radius = Math.sqrt(size) * 2.5; // Increased size multiplier
   
   // Create a random island shape using SVG path
   const points = 12; // Number of points around the circle

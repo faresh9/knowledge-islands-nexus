@@ -5,39 +5,6 @@
  
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 47.4% 11.2%;
- 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
- 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 47.4% 11.2%;
- 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 47.4% 11.2%;
- 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
- 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
- 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
- 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
- 
-    --destructive: 0 100% 50%;
-    --destructive-foreground: 210 40% 98%;
- 
-    --ring: 215 20.2% 65.1%;
- 
-    --radius: 0.5rem;
-  }
- 
-  .dark {
     --background: 224 71% 4%;
     --foreground: 213 31% 91%;
  
@@ -69,6 +36,39 @@
  
     --radius: 0.5rem;
   }
+ 
+  .light {
+    --background: 0 0% 100%;
+    --foreground: 222.2 47.4% 11.2%;
+ 
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+ 
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 47.4% 11.2%;
+ 
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 47.4% 11.2%;
+ 
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+ 
+    --primary: 222.2 47.4% 11.2%;
+    --primary-foreground: 210 40% 98%;
+ 
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+ 
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+ 
+    --destructive: 0 100% 50%;
+    --destructive-foreground: 210 40% 98%;
+ 
+    --ring: 215 20.2% 65.1%;
+ 
+    --radius: 0.5rem;
+  }
 }
  
 @layer base {
@@ -96,14 +96,30 @@
 /* Island styles */
 .island:hover {
   cursor: pointer;
+  filter: brightness(1.2);
+  transition: filter 0.3s ease;
 }
 
 .island-shape {
-  transition: filter 0.3s ease;
+  transition: filter 0.3s ease, transform 0.3s ease;
+}
+
+.island:hover .island-shape {
+  transform: scale(1.05);
 }
 
 .glow-effect {
   filter: url(#glow);
+}
+
+/* Link styles */
+.link {
+  transition: stroke-width 0.3s ease, opacity 0.3s ease;
+}
+
+.link:hover {
+  stroke-width: 4px;
+  opacity: 0.9;
 }
 
 /* Custom animation for topic details */
@@ -120,6 +136,25 @@
 
 .animate-fade-in {
   animation: fadeIn 0.3s ease forwards;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--muted);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--accent);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-foreground);
 }
 
 /* Make sure the app takes up the full viewport */

@@ -1,10 +1,10 @@
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import * as d3 from 'd3';
 import { KnowledgeGraphData, TopicNode } from '../data/sampleData';
 import { createForceSimulation, generateIslandPath, calculateZoomToFit } from '../utils/graphUtils';
 import { Button } from '@/components/ui/button';
-import { ZoomIn, ZoomOut, Maximize2, MoveHorizontal } from 'lucide-react';
+import { ZoomIn, ZoomOut, Maximize2 } from 'lucide-react';
 
 interface KnowledgeMapProps {
   data: KnowledgeGraphData;
@@ -14,10 +14,10 @@ interface KnowledgeMapProps {
 
 const KnowledgeMap: React.FC<KnowledgeMapProps> = ({ data, onSelectTopic, selectedTopic }) => {
   const svgRef = useRef<SVGSVGElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
   const [transform, setTransform] = useState<d3.ZoomTransform>(d3.zoomIdentity);
   const simulationRef = useRef<d3.Simulation<d3.SimulationNodeDatum, undefined> | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
 
   // Update dimensions on resize
   useEffect(() => {
@@ -52,26 +52,64 @@ const KnowledgeMap: React.FC<KnowledgeMapProps> = ({ data, onSelectTopic, select
     
     // Strengthen forces for larger layout
     simulation
-      .force('charge', d3.forceManyBody().strength(-800))
+      .force('charge', d3.forceManyBody().strength(-900))
       .force('link', d3.forceLink().id((d: any) => d.id).distance((link: any) => 250 - (link.strength || 0.5) * 50))
       .force('collision', d3.forceCollide().radius((d: any) => Math.sqrt((d as any).size || 10) * 3.5));
 
-    // Create links
-    const links = container.append('g')
-      .attr('class', 'links')
+    // Define marker for arrows
+    const defs = svg.append('defs');
+    
+    // Add glow filter
+    const filter = defs.append('filter')
+      .attr('id', 'glow')
+      .attr('x', '-50%')
+      .attr('y', '-50%')
+      .attr('width', '200%')
+      .attr('height', '200%');
+      
+    filter.append('feGaussianBlur')
+      .attr('stdDeviation', '5')
+      .attr('result', 'coloredBlur');
+      
+    const feMerge = filter.append('feMerge');
+    feMerge.append('feMergeNode').attr('in', 'coloredBlur');
+    feMerge.append('feMergeNode').attr('in', 'SourceGraphic');
+    
+    // Define arrow marker for links
+    defs.append('marker')
+      .attr('id', 'arrow')
+      .attr('viewBox', '0 -5 10 10')
+      .attr('refX', 20) // Move the arrow away from the node
+      .attr('refY', 0)
+      .attr('markerWidth', 8)
+      .attr('markerHeight', 8)
+      .attr('orient', 'auto')
+      .append('path')
+      .attr('d', 'M0,-5L10,0L0,5')
+      .attr('fill', '#38B6FF');
+
+    // Create links group first so nodes appear on top
+    const linksGroup = container.append('g')
+      .attr('class', 'links');
+    
+    const links = linksGroup
       .selectAll('path')
       .data(data.links)
       .enter()
       .append('path')
       .attr('class', 'link')
-      .attr('stroke', '#38B6FF')
-      .attr('stroke-width', d => d.strength * 2)
+      .attr('stroke', d => d.strength > 0.6 ? '#6C8EBF' : '#38B6FF')
+      .attr('stroke-width', d => d.strength * 3)
       .attr('fill', 'none')
+      .attr('opacity', 0.7)
       .attr('marker-end', 'url(#arrow)');
 
+    // Create nodes group
+    const nodesGroup = container.append('g')
+      .attr('class', 'nodes');
+    
     // Create island nodes
-    const nodes = container.append('g')
-      .attr('class', 'nodes')
+    const nodes = nodesGroup
       .selectAll('g')
       .data(data.nodes)
       .enter()
@@ -84,7 +122,7 @@ const KnowledgeMap: React.FC<KnowledgeMapProps> = ({ data, onSelectTopic, select
 
     // Add island shape paths with larger sizes
     nodes.append('path')
-      .attr('d', d => generateIslandPath(d.size * 1.5)) // Increase size by 50%
+      .attr('d', d => generateIslandPath(d.size * 2)) // Even larger size
       .attr('fill', d => d.color || '#4CAF50')
       .attr('stroke', '#0D47A1')
       .attr('stroke-width', 1.5)
@@ -98,45 +136,15 @@ const KnowledgeMap: React.FC<KnowledgeMapProps> = ({ data, onSelectTopic, select
       .attr('fill', 'white')
       .attr('font-weight', 'bold')
       .attr('pointer-events', 'none')
-      .attr('font-size', d => Math.max(12, Math.sqrt(d.size) * 1.2)) // Increase font size
+      .attr('font-size', d => Math.max(14, Math.sqrt(d.size) * 1.5)) // Larger font size
       .text(d => d.name);
-
-    // Define arrow marker for links
-    svg.append('defs').append('marker')
-      .attr('id', 'arrow')
-      .attr('viewBox', '0 -5 10 10')
-      .attr('refX', 15)
-      .attr('refY', 0)
-      .attr('markerWidth', 6)
-      .attr('markerHeight', 6)
-      .attr('orient', 'auto')
-      .append('path')
-      .attr('d', 'M0,-5L10,0L0,5')
-      .attr('fill', '#38B6FF');
-
-    // Add glow filter
-    const defs = svg.append('defs');
-    const filter = defs.append('filter')
-      .attr('id', 'glow')
-      .attr('x', '-50%')
-      .attr('y', '-50%')
-      .attr('width', '200%')
-      .attr('height', '200%');
-      
-    filter.append('feGaussianBlur')
-      .attr('stdDeviation', '3')
-      .attr('result', 'coloredBlur');
-      
-    const feMerge = filter.append('feMerge');
-    feMerge.append('feMergeNode').attr('in', 'coloredBlur');
-    feMerge.append('feMergeNode').attr('in', 'SourceGraphic');
 
     // Update the simulation on tick
     simulation.on('tick', () => {
       links.attr('d', (d: any) => {
         const dx = d.target.x - d.source.x;
         const dy = d.target.y - d.source.y;
-        const dr = Math.sqrt(dx * dx + dy * dy) * 2; // Makes the curve smoother
+        const dr = Math.sqrt(dx * dx + dy * dy) * 2; // Curve factor
         return `M${d.source.x},${d.source.y} A${dr},${dr} 0 0,1 ${d.target.x},${d.target.y}`;
       });
 
@@ -165,7 +173,7 @@ const KnowledgeMap: React.FC<KnowledgeMapProps> = ({ data, onSelectTopic, select
           nodePositions,
           dimensions.width,
           dimensions.height,
-          60 // Increased padding for better visibility
+          80 // Increased padding for better visibility
         );
         
         svg.transition()
@@ -174,7 +182,7 @@ const KnowledgeMap: React.FC<KnowledgeMapProps> = ({ data, onSelectTopic, select
             zoom.transform,
             d3.zoomIdentity
               .translate(fitTransform.x, fitTransform.y)
-              .scale(fitTransform.scale * 0.9) // Apply slightly larger scale
+              .scale(fitTransform.scale * 0.85) // Apply slightly larger initial zoom
           );
       }, 1000); // Give simulation time to initially position nodes
     }
@@ -186,7 +194,7 @@ const KnowledgeMap: React.FC<KnowledgeMapProps> = ({ data, onSelectTopic, select
   }, [data, dimensions, selectedTopic, onSelectTopic]);
 
   // Zoom controls
-  const handleZoomIn = () => {
+  const handleZoomIn = useCallback(() => {
     if (!svgRef.current) return;
     const svg = d3.select(svgRef.current);
     const zoom = d3.zoom<SVGSVGElement, unknown>();
@@ -194,9 +202,9 @@ const KnowledgeMap: React.FC<KnowledgeMapProps> = ({ data, onSelectTopic, select
       zoom.transform,
       transform.scale(1.2)
     );
-  };
+  }, [transform]);
 
-  const handleZoomOut = () => {
+  const handleZoomOut = useCallback(() => {
     if (!svgRef.current) return;
     const svg = d3.select(svgRef.current);
     const zoom = d3.zoom<SVGSVGElement, unknown>();
@@ -204,9 +212,9 @@ const KnowledgeMap: React.FC<KnowledgeMapProps> = ({ data, onSelectTopic, select
       zoom.transform,
       transform.scale(0.8)
     );
-  };
+  }, [transform]);
 
-  const handleZoomReset = () => {
+  const handleZoomReset = useCallback(() => {
     if (!svgRef.current || !data.nodes.length) return;
     const svg = d3.select(svgRef.current);
     const zoom = d3.zoom<SVGSVGElement, unknown>();
@@ -228,9 +236,9 @@ const KnowledgeMap: React.FC<KnowledgeMapProps> = ({ data, onSelectTopic, select
         zoom.transform,
         d3.zoomIdentity
           .translate(fitTransform.x, fitTransform.y)
-          .scale(fitTransform.scale * 0.9)
+          .scale(fitTransform.scale * 0.85)
       );
-  };
+  }, [data.nodes, dimensions]);
 
   return (
     <div ref={containerRef} className="relative w-full h-full flex items-center justify-center">
@@ -246,7 +254,7 @@ const KnowledgeMap: React.FC<KnowledgeMapProps> = ({ data, onSelectTopic, select
           variant="secondary" 
           size="icon"
           onClick={handleZoomIn}
-          className="rounded-full shadow-lg"
+          className="rounded-full shadow-lg bg-secondary/50 backdrop-blur-sm"
         >
           <ZoomIn size={18} />
         </Button>
@@ -254,7 +262,7 @@ const KnowledgeMap: React.FC<KnowledgeMapProps> = ({ data, onSelectTopic, select
           variant="secondary" 
           size="icon"
           onClick={handleZoomOut}
-          className="rounded-full shadow-lg"
+          className="rounded-full shadow-lg bg-secondary/50 backdrop-blur-sm"
         >
           <ZoomOut size={18} />
         </Button>
@@ -262,7 +270,7 @@ const KnowledgeMap: React.FC<KnowledgeMapProps> = ({ data, onSelectTopic, select
           variant="secondary" 
           size="icon" 
           onClick={handleZoomReset}
-          className="rounded-full shadow-lg"
+          className="rounded-full shadow-lg bg-secondary/50 backdrop-blur-sm"
         >
           <Maximize2 size={18} />
         </Button>
