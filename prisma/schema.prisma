@@ -1,0 +1,84 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+}
+
+// Knowledge islands - representing concepts
+model Island {
+  id               String          @id @default(cuid())
+  title            String          @unique
+  description      String?         @db.Text
+  imageUrl         String?
+  color            String?         @default("#3498db") // Default color for visualization
+  size             Float           @default(1.0)       // Size factor for visualization
+  slug             String          @unique
+  wikiUrl          String?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  
+  // Relations
+  asSourceConnections      Connection[] @relation("SourceIsland")
+  asTargetConnections      Connection[] @relation("TargetIsland")
+  
+  // Tags/categories
+  tags             Tag[]           @relation("IslandToTag")
+  
+  // Metadata
+  viewCount        Int             @default(0)
+  popularity       Float           @default(0.0)
+}
+
+// Connections between islands (relationships)
+model Connection {
+  id               String          @id @default(cuid())
+  sourceId         String
+  targetId         String
+  label            String          // Describes the relationship
+  strength         Float           @default(1.0) // Strength of relationship
+  bidirectional    Boolean         @default(false)
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  
+  // Relations
+  source           Island          @relation("SourceIsland", fields: [sourceId], references: [id], onDelete: Cascade)
+  target           Island          @relation("TargetIsland", fields: [targetId], references: [id], onDelete: Cascade)
+}
+
+// Tags for categorization
+model Tag {
+  id               String          @id @default(cuid())
+  name             String          @unique
+  color            String?         @default("#2ecc71") 
+  
+  // Relations
+  islands          Island[]        @relation("IslandToTag")
+}
+
+// User interactions for personalization
+model UserInteraction {
+  id               String          @id @default(cuid())
+  userId           String?         // Optional for anonymous users
+  islandId         String?
+  connectionId     String?
+  interactionType  String          // view, click, expand, etc.
+  createdAt        DateTime        @default(now())
+}
+
+// Search history to improve recommendations
+model SearchQuery {
+  id               String          @id @default(cuid())
+  query            String
+  userId           String?
+  resultsCount     Int             @default(0)
+  createdAt        DateTime        @default(now())
+}
