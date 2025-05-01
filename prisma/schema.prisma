@@ -10,7 +10,7 @@ generator client {
 
 datasource db {
   provider  = "postgresql"
-  url       = env("DATABASE_URL")
+  url       = "prisma+postgres://accelerate.prisma-data.net/?api_key=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhcGlfa2V5IjoiNzk5NjkyM2UtMWQzYS00ODRiLThiMGYtYWE5NTMzY2Q2ZmVhIiwidGVuYW50X2lkIjoiMzNmNGRiMTE5Y2U4OWM3NjFiMmI1YzIwMzBiZjgzMGRhMGY4YjI3N2Y4MDkxOGMwZTIxZGQ1YWE4MjI1YzVhNSIsImludGVybmFsX3NlY3JldCI6IjIwMjFmY2RjLWI1MTQtNGYxYi1iZGVmLTVhOGYwNzc5MjQzMyJ9.qbJH-qKCaauA3sZRcihYQjBGW6ysktRxy9rJTtacXmc"
 }
 
 // Knowledge islands - representing concepts

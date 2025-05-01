@@ -8,7 +8,24 @@ let prisma: ReturnType<typeof initPrismaClient>;
 
 function initPrismaClient() {
   try {
-    return new PrismaClient().$extends(withAccelerate());
+    // Check if running in development or production
+    const isDevelopment = true;
+    
+    // For development: Use direct database URL without Accelerate to avoid CORS
+    if (isDevelopment) {
+      return new PrismaClient({
+        datasources: {
+          db: {
+            // Replace with your direct database URL (no accelerate prefix)
+            url: "prisma+postgres://accelerate.prisma-data.net/?api_key=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhcGlfa2V5IjoiZTc0MTM4NzEtZGU3Ny00MDgxLWJhNjMtY2NmYmVhNTg0MTYzIiwidGVuYW50X2lkIjoiMzNmNGRiMTE5Y2U4OWM3NjFiMmI1YzIwMzBiZjgzMGRhMGY4YjI3N2Y4MDkxOGMwZTIxZGQ1YWE4MjI1YzVhNSIsImludGVybmFsX3NlY3JldCI6IjIwMjFmY2RjLWI1MTQtNGYxYi1iZGVmLTVhOGYwNzc5MjQzMyJ9.zGJufAR2J_o0oT-NgR9g5m1f7LRn4Y48hKKOm22yUdU"
+          }
+        }
+      });
+    } 
+    // For production: Use Accelerate
+    else {
+      return new PrismaClient().$extends(withAccelerate());
+    }
   } catch (error) {
     console.error("Failed to initialize Prisma client:", error);
     throw new Error("Database connection failed. Please check your configuration.");
